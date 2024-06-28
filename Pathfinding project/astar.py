@@ -82,3 +82,38 @@ class Node:
     #Method to compare the values for patthing
     def __lt__(self, other):
         return False
+
+#Hueristic function    
+def h(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    return abs(x1 - x2) + abs(y1 - y2)
+
+#Grid making function
+def make_grid(rows, width):
+    grid = [ ]
+    gap = width // rows
+    for i in range(rows):
+        grid.append([])
+        for j in range(rows):
+            spot = Node(i, j, gap, rows)
+            grid[i].append(spot)
+
+    return grid
+
+def draw_grid(win, rows, width):
+    gap = width // rows
+    for i in range(rows):
+        pygame.draw.line(win, GREY, (0, i * gap), (width, i * gap))
+        for j in range(rows):
+            pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, width))
+
+def draw(win, grid, rows, width):
+    win.file(WHITE)
+
+    for row in grid:
+        for node in row:
+            node.draw(win)
+
+    draw_grid(win, rows, width)
+    pygame.display.update()
