@@ -3,10 +3,10 @@ import math
 from queue import PriorityQueue
 
 WIDTH = 800
-WIN = pygame.display.set_mode((WIDTH,WIDTH))
-pygame.display.set_caption("A* Path finding algorithim")
+WIN = pygame.display.set_mode((WIDTH, WIDTH))
+pygame.display.set_caption("A* Pathfinding Algorithm")
 
-RED = (255, 0 ,0)
+RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
@@ -18,7 +18,6 @@ GREY = (128, 128, 128)
 TURQUOISE = (64, 224, 208)
 
 class Node:
-    #Method for Variables
     def __init__(self, row, col, width, total_rows):
         self.row = row
         self.col = col
@@ -29,33 +28,29 @@ class Node:
         self.width = width
         self.total_rows = total_rows
 
-    #Method for position
     def get_pos(self):
         return self.row, self.col
     
-    #Method for closed node
     def is_closed(self):
         return self.colour == RED
     
-    #Method for open node
     def is_open(self):
         return self.colour == GREEN
     
-    #Method for obstacle node    
     def is_barrier(self):
         return self.colour == BLACK
     
-    #Method for starting node colour
     def is_start(self):
         return self.colour == ORANGE
     
-    #Method for end node colour
     def is_end(self):
-        return self.colour == PURPLE
+        return self.colour == TURQUOISE
     
-    #Method for restting
     def reset(self):
-        self.colour == WHITE
+        self.colour = WHITE
+
+    def make_start(self):
+        self.colour = ORANGE
 
     def make_closed(self):
         self.colour = RED
@@ -72,33 +67,28 @@ class Node:
     def make_path(self):
         self.colour = PURPLE
     
-    #Method for the pygame window
     def draw(self, win):
         pygame.draw.rect(win, self.colour, (self.x, self.y, self.width, self.width))
 
     def update_neighbours(self, grid):
         pass
     
-    #Method to compare the values for patthing
     def __lt__(self, other):
         return False
 
-#Hueristic function    
 def h(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
     return abs(x1 - x2) + abs(y1 - y2)
 
-#Grid making function
 def make_grid(rows, width):
-    grid = [ ]
+    grid = []
     gap = width // rows
     for i in range(rows):
         grid.append([])
         for j in range(rows):
             spot = Node(i, j, gap, rows)
             grid[i].append(spot)
-
     return grid
 
 def draw_grid(win, rows, width):
@@ -109,19 +99,61 @@ def draw_grid(win, rows, width):
             pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, width))
 
 def draw(win, grid, rows, width):
-    win.file(WHITE)
-
+    win.fill(WHITE)
     for row in grid:
         for node in row:
             node.draw(win)
-
     draw_grid(win, rows, width)
     pygame.display.update()
 
 def get_clicked_pos(pos, rows, width):
     gap = width // rows
     y, x = pos
-
-    row = y// gap
+    row = y // gap
     col = x // gap
     return row, col
+
+def main(win, width):
+    ROWS = 50
+    grid = make_grid(ROWS, width)
+    start = None 
+    end = None
+    run = True
+    started = False
+    while run:
+        draw(win, grid, ROWS, width)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+            if started:
+                continue
+
+            if pygame.mouse.get_pressed()[0]:
+                pos = pygame.mouse.get_pos()
+                row, col = get_clicked_pos(pos, ROWS, width)
+                spot = grid[row][col]
+                if not start:
+                    start = spot
+                    start.make_start()
+
+                elif not end:
+                    end = spot
+                    end.make_end()
+
+                elif spot != end and spot != start:
+                    spot.make_barrier()
+            
+            elif pygame.mouse.get_pressed()[2]:
+                pos = pygame.mouse.get_pos()
+                row, col = get_clicked_pos(pos, ROWS, width)
+                spot = grid[row][col]
+                spot.reset()
+                if spot == start:
+                    start = None
+                elif spot == end:
+                    end = None
+
+    pygame.quit()
+
+main(WIN, WIDTH)
