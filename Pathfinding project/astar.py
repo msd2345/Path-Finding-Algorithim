@@ -71,7 +71,18 @@ class Node:
         pygame.draw.rect(win, self.colour, (self.x, self.y, self.width, self.width))
 
     def update_neighbours(self, grid):
-        pass
+        self.neighbours = []
+        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier(): #Down
+            self.neighbours.append(grid[self.row + 1][self.col])
+
+        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier(): #Up
+            self.neighbours.append(grid[self.row - 1][self.col])
+
+        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): #Right
+            self.neighbours.append(grid[self.row][self.col + 1])
+
+        if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): #Left
+            self.neighbours.append(grid[self.row][self.col - 1])
     
     def __lt__(self, other):
         return False
@@ -133,11 +144,11 @@ def main(win, width):
                 pos = pygame.mouse.get_pos()
                 row, col = get_clicked_pos(pos, ROWS, width)
                 spot = grid[row][col]
-                if not start:
+                if not start and spot != end:
                     start = spot
                     start.make_start()
 
-                elif not end:
+                elif not end and spot != start:
                     end = spot
                     end.make_end()
 
@@ -153,6 +164,10 @@ def main(win, width):
                     start = None
                 elif spot == end:
                     end = None
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_space and not started:
+                    pass
 
     pygame.quit()
 
