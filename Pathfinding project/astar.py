@@ -114,6 +114,7 @@ def algorithm(draw, grid, start, end):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                return
             
         current = open_set.get()[2]
         open_set_hash.remove(current)
@@ -166,6 +167,7 @@ def draw(win, grid, rows, width):
         for node in row:
             node.draw(win)
     draw_grid(win, rows, width)
+    draw_buttons(win)
     pygame.display.update()
 
 def get_clicked_pos(pos, rows, width):
@@ -175,15 +177,68 @@ def get_clicked_pos(pos, rows, width):
     col = x // gap
     return row, col
 
+def create_theme_park_template(grid):
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            if i == 0 or j == 0 or i == len(grid) - 1 or j == len(grid[i]) - 1:
+                grid[i][j].make_barrier()
+    grid[10][10].make_barrier()
+    grid[10][11].make_barrier()
+
+def create_subway_map_template(grid):
+    for i in range(len(grid)):
+        if i % 5 == 0:
+            for j in range(len(grid[i])):
+                grid[i][j].make_barrier()
+    grid[20][20].make_barrier()
+    grid[20][21].make_barrier()
+
+def draw_buttons(win):
+    font = pygame.font.SysFont('Arial', 20)
+    theme_park_button = pygame.Rect(10, 10, 150, 50)
+    subway_map_button = pygame.Rect(10, 70, 150, 50)
+    reset_button = pygame.Rect(WIDTH - 160, 10, 150, 50)
+
+    pygame.draw.rect(win, GREY, theme_park_button)
+    pygame.draw.rect(win, GREY, subway_map_button)
+    pygame.draw.rect(win, GREY, reset_button)
+
+    theme_park_text = font.render('Theme Park', True, BLACK)
+    subway_map_text = font.render('Subway Map', True, BLACK)
+    reset_text = font.render('Reset', True, BLACK)
+
+    win.blit(theme_park_text, (15, 20))
+    win.blit(subway_map_text, (15, 80))
+    win.blit(reset_text, (WIDTH - 145, 20))
+
+    return theme_park_button, subway_map_button, reset_button
+
+def handle_button_click(pos, buttons):
+    theme_park_button, subway_map_button, reset_button = buttons
+    if theme_park_button.collidepoint(pos):
+        return 'theme_park'
+    elif subway_map_button.collidepoint(pos):
+        return 'subway_map'
+    elif reset_button.collidepoint(pos):
+        return 'reset'
+    return None
+
 def main(win, width):
+    pygame.init()
+    pygame.font.init()  # Initialize the font module
+
     ROWS = 50
     grid = make_grid(ROWS, width)
     start = None 
     end = None
     run = True
     started = False
+
     while run:
         draw(win, grid, ROWS, width)
+        buttons = draw_buttons(win)
+        pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -191,39 +246,57 @@ def main(win, width):
             if started:
                 continue
 
-            if pygame.mouse.get_pressed()[0]: # Left mouse button
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
-                row, col = get_clicked_pos(pos, ROWS, width)
-                spot = grid[row][col]
-                if not start and spot != end:
-                    start = spot
-                    start.make_start()
+                clicked_template = handle_button_click(pos, buttons)
+                if clicked_template:
+                    if clicked_template == 'theme_park':
+                        create_theme_park_template(grid)
+                    elif clicked_template == 'subway_map':
+                        create_subway_map_template(grid)
+                    elif clicked_template == 'reset':
+                        start = None
+                        end = None
+                        grid = make_grid(ROWS, width)
+                    continue
 
-                elif not end and spot != start:
-                    end = spot
-                    end.make_end()
+                if pygame.mouse.get_pressed()[0]: # Left mouse button
+                    row, col = get_clicked_pos(pos, ROWS, width)
+                    spot = grid[row][col]
+                    if not start and spot != end:
+                        start = spot
+                        start.make_start()
 
-                elif spot != end and spot != start:
-                    spot.make_barrier()
-            
-            elif pygame.mouse.get_pressed()[2]: # Right mouse button
-                pos = pygame.mouse.get_pos()
-                row, col = get_clicked_pos(pos, ROWS, width)
-                spot = grid[row][col]
-                spot.reset()
-                if spot == start:
-                    start = None
-                elif spot == end:
-                    end = None
+                    elif not end and spot != start:
+                        end = spot
+                        end.make_end()
+
+                    elif spot != end and spot != start:
+                        spot.make_barrier()
+                
+                elif pygame.mouse.get_pressed()[2]: # Right mouse button
+                    row, col = get_clicked_pos(pos, ROWS, width)
+                    spot = grid[row][col]
+                    spot.reset()
+                    if spot == start:
+                        start = None
+                    elif spot == end:
+                        end = None
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and not started:
+                if event.key == pygame.K_SPACE and start and end:
                     for row in grid:
                         for spot in row:
                             spot.update_neighbours(grid)
                     
                     algorithm(lambda: draw(win, grid, ROWS, width), grid, start, end)
 
+                if event.key == pygame.K_c:
+                    start = None
+                    end = None
+                    grid = make_grid(ROWS, width)
+
     pygame.quit()
 
-main(WIN, WIDTH)
+if __name__ == "__main__":
+    main(WIN, WIDTH)
